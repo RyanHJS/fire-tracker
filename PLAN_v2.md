@@ -32,11 +32,11 @@ One user can have multiple accounts.
 | `account_id` | `uuid` PK | |
 | `user_id` | `uuid` | FK → `users.user_id` |
 | `account_name` | `text` | e.g. "Chase Checking", "Vanguard 401k" |
-| `account_type` | `enum` | `Checking` \| `Savings` \| `Investment` |
+| `account_type` | `enum` | `Living` \| `Investment` |
 | `current_balance` | `numeric(12,2)` | Automatically updated by a PostgreSQL trigger on every transaction insert |
 | `is_active` | `bool` | Default: `true` |
 
-> Only **Investment** accounts are summed into the portfolio balance used for FIRE calculations.
+> **Living** accounts represent day-to-day operational money (the equivalent of checking + savings combined). Only **Investment** accounts are summed into the portfolio balance used for FIRE calculations.
 > `current_balance` is maintained by a **PostgreSQL trigger** (not application code) — whenever a row is inserted into `transactions`, the database instantly adds or subtracts the amount from the linked account. This prevents data mismatch and keeps the frontend code clean.
 
 ---
@@ -71,10 +71,11 @@ All FIRE plan types share a common parent class with the base fields every plan 
 | `plan_id` | `uuid` PK | |
 | `user_id` | `uuid` | FK → `users.user_id` |
 | `plan_name` | `text` | e.g. "My Lean FIRE Goal" |
-| `current_age` | `int` | Copied from user at plan creation |
 | `target_retirement_age` | `int` | The user's **goal** — the age they *want* to retire |
 | `annual_retirement_budget` | `numeric(12,2)` | Planned annual spending in retirement |
 | `safe_withdrawal_rate` | `numeric(5,4)` | Default `0.04` (4%), user-customizable |
+
+> `current_age` is intentionally **not stored here**. It is always read from `users.age` (joined via `user_id`) to maintain a single source of truth and prevent the two tables from drifting out of sync.
 
 > **Base FIRE Number** = `annual_retirement_budget / safe_withdrawal_rate`
 > (Equivalent to `annual_retirement_budget × 25` at the default 4% SWR)
@@ -131,8 +132,9 @@ The user saves aggressively early until their portfolio is large enough to compo
 | `assumed_annual_growth_rate` | `numeric(5,4)` | Expected annual market return, default `0.07` (7%) |
 
 > **Full FIRE Target** = `annual_retirement_budget / safe_withdrawal_rate`
-> **Coast FIRE Number** = `Full FIRE Target / (1 + assumed_annual_growth_rate) ^ (target_retirement_age − current_age)`
+> **Coast FIRE Number** = `Full FIRE Target / (1 + assumed_annual_growth_rate) ^ (target_retirement_age − users.age)`
 > The user has reached Coast FIRE when their current portfolio balance ≥ the Coast FIRE Number.
+> `users.age` is joined from the `users` table — it is not stored on the plan itself.
 
 ---
 
@@ -177,7 +179,7 @@ while current_balance < target_fire_number:
     year = year + 1
 
 estimated_retirement_year = year
-estimated_retirement_age  = current_age + (estimated_retirement_year - current_year)
+estimated_retirement_age  = users.age + (estimated_retirement_year - current_year)  # age joined from users table
 
 # UI comparison:
 if estimated_retirement_age > target_retirement_age:

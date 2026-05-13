@@ -1,35 +1,24 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
-# Build output
-dist/
-dist-ssr/
-build/
-
-# Vite cache
-.vite/
-
-# Environment variables (may contain secrets)
-.env
-.env.local
-.env.*.local
-
-# macOS
-.DS_Store
+node_modules
+dist
+dist-ssr
+*.local
 
 # Editor directories and files
-.idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
