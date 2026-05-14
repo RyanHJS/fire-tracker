@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import './LoginPage.css'
@@ -14,6 +14,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
 
+  // Mouse-tracking spotlight
+  const [mouse, setMouse] = useState({ x: '50%', y: '40%' })
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      setMouse({ x: `${e.clientX}px`, y: `${e.clientY}px` })
+    }
+    window.addEventListener('mousemove', handler)
+    return () => window.removeEventListener('mousemove', handler)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -22,51 +32,54 @@ export default function LoginPage() {
 
     if (mode === 'signin') {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        setError(error.message)
-      } else {
-        navigate('/dashboard')
-      }
+      if (error) setError(error.message)
+      else navigate('/dashboard')
     } else {
       const { error } = await supabase.auth.signUp({ email, password })
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess('Account created! Check your email to confirm, then sign in.')
+      if (error) setError(error.message)
+      else {
+        setSuccess('Account created! You can now sign in.')
         setMode('signin')
       }
     }
-
     setLoading(false)
   }
 
   return (
     <div className="login-page">
-      {/* Animated background orbs */}
-      <div className="login-bg">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-      </div>
+      {/* Mouse-following spotlight */}
+      <div
+        className="mouse-spotlight"
+        style={{
+          background: `radial-gradient(700px circle at ${mouse.x} ${mouse.y},
+            rgba(124, 58, 237, 0.18) 0%,
+            rgba(249, 115, 22, 0.08) 45%,
+            transparent 70%)`
+        }}
+      />
 
+      {/* Static ambient orbs */}
+      <div className="orb orb-1" />
+      <div className="orb orb-2" />
+      <div className="orb orb-3" />
+
+      {/* Card */}
       <div className="login-card">
-        {/* Logo */}
         <div className="login-logo">
           <span className="login-logo-icon">🔥</span>
           <span className="login-logo-text">FIRE Tracker</span>
         </div>
 
-        {/* Headline */}
         <h1 className="login-title">
-          {mode === 'signin' ? 'Welcome back' : 'Start your journey'}
+          {mode === 'signin' ? 'Welcome back' : 'Get started'}
         </h1>
         <p className="login-subtitle">
-          {mode === 'signin'
-            ? 'Sign in to track your path to financial independence.'
-            : 'Create an account and take control of your FIRE goals.'}
+          Your path to{' '}
+          <span className="gradient-word">financial freedom</span>{' '}
+          starts here.
         </p>
 
-        {/* Tab toggle */}
+        {/* Tabs */}
         <div className="login-tabs" role="tablist">
           <button
             id="tab-signin"
@@ -135,15 +148,11 @@ export default function LoginPage() {
             className="login-btn"
             disabled={loading}
           >
-            {loading
-              ? 'Loading…'
-              : mode === 'signin' ? 'Sign In' : 'Create Account'}
+            {loading ? 'Loading…' : mode === 'signin' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 
-        <p className="login-footer">
-          Your data is private and secure.
-        </p>
+        <p className="login-footer">Your data is private and secure.</p>
       </div>
     </div>
   )
