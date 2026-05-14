@@ -1,8 +1,150 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import './LoginPage.css'
+
+type Mode = 'signin' | 'signup'
+
 export default function LoginPage() {
+  const navigate = useNavigate()
+  const [mode, setMode] = useState<Mode>('signin')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError(null)
+    setSuccess(null)
+    setLoading(true)
+
+    if (mode === 'signin') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) {
+        setError(error.message)
+      } else {
+        navigate('/dashboard')
+      }
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password })
+      if (error) {
+        setError(error.message)
+      } else {
+        setSuccess('Account created! Check your email to confirm, then sign in.')
+        setMode('signin')
+      }
+    }
+
+    setLoading(false)
+  }
+
   return (
-    <div>
-      <h1>Login</h1>
-      <p>Phase 3 — Auth coming soon</p>
+    <div className="login-page">
+      {/* Animated background orbs */}
+      <div className="login-bg">
+        <div className="orb orb-1" />
+        <div className="orb orb-2" />
+        <div className="orb orb-3" />
+      </div>
+
+      <div className="login-card">
+        {/* Logo */}
+        <div className="login-logo">
+          <span className="login-logo-icon">🔥</span>
+          <span className="login-logo-text">FIRE Tracker</span>
+        </div>
+
+        {/* Headline */}
+        <h1 className="login-title">
+          {mode === 'signin' ? 'Welcome back' : 'Start your journey'}
+        </h1>
+        <p className="login-subtitle">
+          {mode === 'signin'
+            ? 'Sign in to track your path to financial independence.'
+            : 'Create an account and take control of your FIRE goals.'}
+        </p>
+
+        {/* Tab toggle */}
+        <div className="login-tabs" role="tablist">
+          <button
+            id="tab-signin"
+            role="tab"
+            aria-selected={mode === 'signin'}
+            className={`login-tab ${mode === 'signin' ? 'active' : ''}`}
+            onClick={() => { setMode('signin'); setError(null); setSuccess(null) }}
+          >
+            Sign In
+          </button>
+          <button
+            id="tab-signup"
+            role="tab"
+            aria-selected={mode === 'signup'}
+            className={`login-tab ${mode === 'signup' ? 'active' : ''}`}
+            onClick={() => { setMode('signup'); setError(null); setSuccess(null) }}
+          >
+            Sign Up
+          </button>
+        </div>
+
+        {/* Form */}
+        <form id="login-form" className="login-form" onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label htmlFor="login-email" className="form-label">Email</label>
+            <input
+              id="login-email"
+              type="email"
+              className="form-input"
+              placeholder="you@example.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="login-password" className="form-label">Password</label>
+            <input
+              id="login-password"
+              type="password"
+              className="form-input"
+              placeholder={mode === 'signup' ? 'Min. 6 characters' : '••••••••'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+            />
+          </div>
+
+          {error && (
+            <div id="login-error" className="form-message form-message--error" role="alert">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div id="login-success" className="form-message form-message--success" role="status">
+              {success}
+            </div>
+          )}
+
+          <button
+            id="login-submit"
+            type="submit"
+            className="login-btn"
+            disabled={loading}
+          >
+            {loading
+              ? 'Loading…'
+              : mode === 'signin' ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+
+        <p className="login-footer">
+          Your data is private and secure.
+        </p>
+      </div>
     </div>
   )
 }
